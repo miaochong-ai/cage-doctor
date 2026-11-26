@@ -82,6 +82,30 @@ bash cage-doctor-macos.sh --json   # 机器可读，方便接监控
 
 macOS 版是纯终端脚本，不依赖任何第三方库，也不需要 sudo。系统版本、虚拟化支持、内存磁盘、Cage 端口、客机 SSH 与登录凭据、claude.ai 可达性、时区，逐项打「通过 / 注意 / 不合格 / 待办」。
 
+### 一键修复（cage-fix）
+
+体检只说问题，cage-fix 负责把「本机能改」的那几项直接修掉，改完自动复测给分。
+
+Windows：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File cage-fix.ps1 -DryRun   # 先看它准备改什么
+powershell -ExecutionPolicy Bypass -File cage-fix.ps1           # 真改，改完跑一次 checkcc
+```
+
+macOS：
+
+```bash
+bash cage-fix-macos.sh --dry-run
+bash cage-fix-macos.sh
+```
+
+修这 6 项：工作台自动时区/语言同步、客机时区、客机 LANG、客机中文字体（卸载 Noto CJK SC，这是「字体地区特征 +13」的唯一来源）、共享挂载条数（只提示不删文件）、Cage 代理是否在跑。
+
+明确不修的四项，脚本会在结尾列出来：网络出口类型（数据中心/云厂商）、多源 IP 情报冲突、claude.ai 的 Cloudflare 人机验证、DNS 与代理地区一致性。这四项取决于出口 IP 的性质，换住宅节点才有用，工具不会假装能改。
+
+改动前自动备份到 `~/.claude-cage/backup/<时间戳>/`，重复跑会先看现状，已经是正确值就跳过。
+
 ## 结果怎么读
 
 四种状态：
@@ -113,9 +137,12 @@ macOS 版是纯终端脚本，不依赖任何第三方库，也不需要 sudo。
 cage-doctor/
 ├── windows/
 │   ├── cage-doctor.ps1      # 主程序，单文件 WinForms
-│   └── run-doctor.bat       # 双击入口
+│   ├── run-doctor.bat       # 双击入口
+│   ├── cage-fix.ps1         # 一键修复
+│   └── run-fix.bat          # 修复入口
 ├── macos/
-│   └── cage-doctor-macos.sh # 终端体检脚本
+│   ├── cage-doctor-macos.sh # 终端体检脚本
+│   └── cage-fix-macos.sh    # 一键修复
 └── screenshots/
     ├── windows-local.png
     └── windows-web.png
