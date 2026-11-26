@@ -1,0 +1,59 @@
+Claude-Cage 一键修复（Windows）使用说明
+==========================================
+
+这是什么
+--------
+cage-doctor 只看不修。这个 cage-fix 是它的配套件：把 checkcc 那 48 个检测点里
+"本机能改" 的部分自动修掉，改完顺手跑一次 checkcc 复测，直接给你新分数。
+
+修什么（6 项）
+-------------
+1. 工作台自动同步        把 workbench.json 的 auto_timezone / auto_language 关掉
+2. 客机时区              设成 America/Los_Angeles（已经是美西就跳过）
+3. 客机语言环境          LANG=en_US.UTF-8
+4. 客机中文字体          卸载 fonts-noto-cjk / fonts-noto-cjk-extra 并刷新字体缓存
+                        这是 checkcc "字体地区特征 +13" 的唯一来源，改完必须为 0
+5. 共享挂载              只统计 sshfs 挂载条数，多于 1 条会提示你手动清（不自动删文件）
+6. Cage 控制面           proxy.status 处于停止就执行 proxy.restart
+
+改完自动做：在客机里起 Xvfb + Chrome，真点一次 checkcc，抓分数和逐项扣分。
+
+不动什么
+--------
+不改出口节点、不伪造指纹、不动任何 IP 相关的东西。这几项本地改不了：
+  · 网络出口类型（数据中心/云厂商）+13    → 换住宅 IP
+  · 多源 IP 情报一致性冲突 +15            → 换节点
+  · claude.ai 可达性 +6                   → Cloudflare 人机验证，浏览器能过脚本过不了
+  · DNS/代理一致性 +5                     → anycast 边缘城市错位，换节点才会变
+脚本会把它们列在最后，不假装能修。
+
+怎么用
+------
+方式一：双击 run-fix.bat（会弹一个控制台窗口，跑完停在那儿给你看结果）
+
+方式二：命令行
+  powershell -ExecutionPolicy Bypass -File cage-fix.ps1
+  powershell -ExecutionPolicy Bypass -File cage-fix.ps1 -DryRun     # 只说不做，先看会改什么
+  powershell -ExecutionPolicy Bypass -File cage-fix.ps1 -SkipWeb    # 不跑 checkcc，只修
+  powershell -ExecutionPolicy Bypass -File cage-fix.ps1 -Json       # 输出 JSON，接监控用
+
+前置条件
+--------
+· Cage 已经初始化过（存在 %USERPROFILE%\.claude-cage）
+· 想修客机那几项时，Cage 必须是启动状态（能 ssh 进客机）
+· 会自动找 ssh.exe：先找 Cage 自带的 runtime\openssh\ssh.exe，再找系统 OpenSSH
+· ssh.config 取 state\lima 下最新的一份，端口变了也不用你改
+
+安全性
+------
+· 改动前自动备份 config.json / workbench.json / guest-profile.json / environment-storage.json
+  到 %USERPROFILE%\.claude-cage\backup\<时间戳>\
+· 每一步都先看现状，已经是正确值就写"无需改动"，重复跑不会反复折腾
+· 字体卸载的还原办法：在客机里 sudo apt install fonts-noto-cjk
+
+常见情况
+--------
+· "跳过：连不上客机"         → Cage 没启动，或客机还没起来
+· "控制器不可用"             → 打开 Cage 窗口，等显示已联网再重跑
+· 复测分数没怎么变           → 正常。能修的最多十来分，剩下的是 IP 性质问题
+· 改完建议重启一次 Cage      → workbench.json 是启动时读的
